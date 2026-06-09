@@ -1,4 +1,4 @@
-name: Automatic YouTube Premium Logo Builder (JADX Full Edition)
+name: Automatic YouTube Premium Logo Builder (JADX-ZIP Edition)
 
 on:
   workflow_dispatch:
@@ -30,13 +30,13 @@ jobs:
           echo "$HOME/jadx_dir/bin" >> $GITHUB_PATH
           sudo apt-get update && sudo apt-get install -y zip unzip
 
-      - name: Decompile Full APK using JADX
+      - name: Decompile Resources using JADX (Fast Mode)
         run: |
           echo "========================================================="
-          echo "🚀 DECOMPILING FULL APK WITH JADX"
+          echo "🚀 DECOMPILING RESOURCES ONLY WITH JADX"
           echo "========================================================="
-          # ਇੱਥੋਂ --only-resources ਹਟਾ ਕੇ ਪੂਰੀ ਐਪ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ
-          jadx youtube_orig.apk -d jadx_out
+          # --no-src ਨਾਲ ਸਿਰਫ ਰਿਸੋਰਸ ਨਿਕਲਣਗੇ, ਅਤੇ || true ਨਾਲ ਪ੍ਰੋਸੈਸ ਰੁਕੇਗਾ ਨਹੀਂ
+          jadx youtube_orig.apk --no-src -d jadx_out || true
 
       - name: Fully Automated Smart Logo Swap via JADX Output
         run: |
@@ -50,7 +50,7 @@ jobs:
           INT_PREMIUM_LIGHT=$(find jadx_out -type f -name "*premium*wordmark*light*" -o -name "*premium*logo*light*" | head -n 1)
           
           if [ -z "$INT_PREMIUM_DARK" ] || [ -z "$INT_PREMIUM_LIGHT" ]; then
-            echo "❌ ERROR: JADX ਨੂੰ ਪੂਰੀ ਐਪ ਵਿੱਚੋਂ ਵੀ ਪ੍ਰੀਮੀਅਮ ਲੋਗੋ ਨਹੀਂ ਲੱਭਿਆ!"
+            echo "❌ ERROR: ਐਪ ਦੇ ਅੰਦਰੋਂ ਪ੍ਰੀਮੀਅਮ ਲੋਗੋ ਆਟੋ-ਡਿਟੈਕਟ ਨਹੀਂ ਹੋ ਸਕਿਆ!"
             exit 1
           fi
           
@@ -79,11 +79,11 @@ jobs:
             fi
           done
 
-      - name: Inject Modified Logos Directly Back into Original APK
+      - name: Inject Modified Logos Directly Back into Original APK (No Apktool Needed)
         run: |
           BASE_DIR=$(pwd)
           echo "========================================================="
-          echo "📦 INJECTING MODIFIED LOGOS VIA ZIP INTO ORIGINAL APK"
+          echo "📦 PACKING FINAL APK VIA ZIP INJECTION"
           echo "========================================================="
           
           mkdir -p zip_repack
@@ -95,11 +95,13 @@ jobs:
             cp -r jadx_out/res zip_repack/
           fi
           
-          # ਸਿਰਫ਼ drawable ਫੋਲਡਰ ਰੱਖਣੇ, ਬਾਕੀ ਸਭ ਡਿਲੀਟ ਤਾਂ ਜੋ ਏ.ਪੀ.ਕੇ ਸਹੀ ਰਹੇ
+          # ਸਿਰਫ਼ drawable ਫੋਲਡਰ ਰੱਖਣੇ, ਬਾਕੀ ਸਭ ਡਿਲੀਟ ਤਾਂ ਜੋ ਓਰੀਜਨਲ ਏ.ਪੀ.ਕੇ ਖ਼ਰਾਬ ਨਾ ਹੋਵੇ
           find zip_repack -type f ! \( -name "*wordmark*header*" -o -name "*logo_text*" -o -name "*youtube_logo*" \) -delete 2>/dev/null || true
           
+          # ਓਰੀਜਨਲ ਏ.ਪੀ.ਕੇ ਦੀ ਕਾਪੀ ਬਣਾਉਣੀ
           cp youtube_orig.apk youtube_modified.apk
           
+          # ZIP ਕਮਾਂਡ ਰਾਹੀਂ ਨਵੀਆਂ ਇਮੇਜਿਜ਼ ਨੂੰ ਓਰੀਜਨਲ ਏ.ਪੀ.ਕੇ ਦੇ ਅੰਦਰ ਓਵਰਰਾਈਟ ਕਰਨਾ
           cd zip_repack
           if [ -d "resources" ]; then
             zip -ur "$BASE_DIR/youtube_modified.apk" resources/
@@ -114,7 +116,7 @@ jobs:
       - name: Setup Android SDK Tools
         uses: android-actions/setup-android@v3
 
-      - name: Zipalign & Sign Final JADX-Modded APK
+      - name: Zipalign & Sign Final Modded APK
         run: |
           keytool -genkey -v -keystore release.keystore -alias youtube_alias -keyalg RSA -keysize 2048 -validity 10000 -storepass "mysecretpassword" -keypass "mysecretpassword" -dname "CN=Diljan, OU=Dev, O=Mod, L=IN, S=PB, C=IN"
           $ANDROID_HOME/build-tools/34.0.0/zipalign -v 4 youtube_modified.apk youtube_aligned.apk
