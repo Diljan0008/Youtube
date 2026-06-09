@@ -1,4 +1,4 @@
-name: Automatic YouTube Premium Logo Builder
+name: Automatic YouTube Premium Logo Builder (JADX Edition)
 
 on:
   workflow_dispatch:
@@ -22,92 +22,108 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Install Latest Apktool & ZIP Tools
+      - name: Install JADX & ZIP Tools
         run: |
-          mkdir -p ~/.local/bin
-          wget https://raw.githubusercontent.com/iBotPeaches/Apktool/master/scripts/linux/apktool -O ~/.local/bin/apktool
-          wget https://github.com/iBotPeaches/Apktool/releases/download/v2.10.0/apktool_2.10.0.jar -O ~/.local/bin/apktool.jar
-          chmod +x ~/.local/bin/apktool ~/.local/bin/apktool.jar
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          sudo apt-get update && sudo apt-get install -y zip
+          # JADX ਦਾ ਲੇਟੈਸਟ ਵਰਜ਼ਨ ਡਾਊਨਲੋਡ ਕਰਨਾ
+          cd $HOME
+          wget https://github.com/skylot/jadx/releases/download/v1.5.1/jadx-1.5.1.zip
+          mkdir jadx_dir && unzip -q jadx-1.5.1.zip -d jadx_dir
+          echo "$HOME/jadx_dir/bin" >> $GITHUB_PATH
+          sudo apt-get update && sudo apt-get install -y zip unzip
 
-      - name: Decompile YouTube APK
+      - name: Decompile Resources using JADX
         run: |
-          apktool d -r youtube_orig.apk -o youtube_out
+          echo "========================================================="
+          echo "🚀 DECOMPILING RESOURCES WITH JADX (NO XML ERRORS)"
+          echo "========================================================="
+          # JADX ਰਾਹੀਂ ਸਿਰਫ਼ ਰਿਸੋਰਸਿਜ਼ ਅਤੇ ਇਮੇਜਿਜ਼ ਬਾਹਰ ਕੱਢਣੀਆਂ
+          jadx youtube_orig.apk --only-resources -d jadx_out
 
-      - name: Recompile Code Into APK (First Build)
-        run: |
-          apktool b youtube_out -o youtube_unsigned.apk
-
-      - name: Direct Zip Injection (Replacing Logos inside Compiled APK)
+      - name: Fully Automated Smart Logo Swap via JADX Output
         run: |
           BASE_DIR=$(pwd)
-          
           echo "========================================================="
-          echo "🚀 INJECTING PREMIUM LOGOS DIRECTLY INTO COMPILED APK"
+          echo "🔍 AUTO-DETECTING INTERNAL PREMIUM LOGOS"
           echo "========================================================="
           
-          # ਪਹਿਲਾਂ ਚੈੱਕ ਕਰਨਾ ਕਿ ਤੁਹਾਡੀ ਰੈਪੋ 'ਚ ਅਸਲੀ ਫਾਈਲਾਂ ਕਿਹੜੀਆਂ ਪਈਆਂ ਨੇ
-          echo "📁 Checking files in repository root:"
-          ls -la
+          # JADX ਦੇ ਆਊਟਪੁੱਟ ਵਿੱਚੋਂ ਅਸਲੀ ਪ੍ਰੀਮੀਅਮ ਲੋਗੋ ਲੱਭਣਾ
+          INT_PREMIUM_DARK=$(find jadx_out -type f -name "*premium*wordmark*dark*" -o -name "*premium*logo*dark*" | head -n 1)
+          INT_PREMIUM_LIGHT=$(find jadx_out -type f -name "*premium*wordmark*light*" -o -name "*premium*logo*light*" | head -n 1)
           
-          # ਜੇ ਫਾਈਲਾਂ ਦਾ ਨਾਮ ਥੋੜ੍ਹਾ ਬਦਲਵਾਂ ਹੈ ਤਾਂ ਆਪੇ ਸਹੀ ਫਾਈਲ ਸੈੱਟ ਕਰਨਾ
-          DARK_SRC=$(find . -maxdepth 1 -name "*premium*dark*.png" -o -name "*premium*dark*.webp" | head -n 1)
-          LIGHT_SRC=$(find . -maxdepth 1 -name "*premium*light*.png" -o -name "*premium*light*.webp" | head -n 1)
-          
-          # ਜੇਕਰ ਉੱਪਰਲੇ ਨਾਮ ਨਾ ਮਿਲੇ ਤਾਂ ਕੋਈ ਵੀ premium ਨਾਮ ਵਾਲੀ ਫਾਈਲ ਚੁੱਕ ਲੈਣਾ
-          if [ -z "$DARK_SRC" ]; then DARK_SRC=$(find . -maxdepth 1 -name "*premium*.png" | head -n 1); fi
-          if [ -z "$LIGHT_SRC" ]; then LIGHT_SRC=$(find . -maxdepth 1 -name "*premium*.png" | tail -n 1); fi
-          
-          # ਜੇ ਫਿਰ ਵੀ ਕੁਝ ਨਾ ਮਿਲੇ (ਯਾਨੀ ਫਾਈਲ ਅਪਲੋਡ ਹੀ ਨਹੀਂ ਕੀਤੀ)
-          if [ -z "$DARK_SRC" ] || [ ! -f "$DARK_SRC" ]; then
-            echo "❌ ERROR: ਰੈਪੋ ਵਿੱਚ ਕੋਈ ਵੀ ਪ੍ਰੀਮੀਅਮ ਲੋਗੋ (premium_logo) ਇਮੇਜ ਨਹੀਂ ਮਿਲੀ! ਕਿਰਪਾ ਕਰਕੇ ਪਹਿਲਾਂ ਫਾਈਲ ਅਪਲੋਡ ਕਰੋ।"
+          if [ -z "$INT_PREMIUM_DARK" ] || [ -z "$INT_PREMIUM_LIGHT" ]; then
+            echo "❌ ERROR: JADX ਨੂੰ ਵੀ ਐਪ ਦੇ ਅੰਦਰੋਂ ਪ੍ਰੀਮੀਅਮ ਲੋਗੋ ਨਹੀਂ ਲੱਭਿਆ!"
             exit 1
           fi
           
-          echo "🎯 Using Dark Logo Source: $DARK_SRC"
-          echo "🎯 Using Light Logo Source: $LIGHT_SRC"
+          echo "🎯 JADX Found Dark Premium Source: $INT_PREMIUM_DARK"
+          echo "🎯 JADX Found Light Premium Source: $INT_PREMIUM_LIGHT"
           
-          # ਟੈਂਪਰੇਰੀ ਫੋਲਡਰ ਸਟ੍ਰਕਚਰ ਤਿਆਰ ਕਰਨਾ
-          mkdir -p zip_injection/res
-          mkdir -p zip_injection/resources/res
+          # ਬੈਕਅੱਪ ਰੱਖਣਾ
+          cp "$INT_PREMIUM_DARK" premium_dark_auto.png
+          cp "$INT_PREMIUM_LIGHT" premium_light_auto.png
           
-          prepare_logos() {
-            local root_path=$1
-            for size in "mdpi" "hdpi" "xhdpi" "xxhdpi" "xxxhdpi"; do
-              local target_dir="$root_path/drawable-$size"
-              mkdir -p "$target_dir"
-              
-              cp "$BASE_DIR/$DARK_SRC" "$target_dir/yt_logo_text_dark.png"
-              cp "$BASE_DIR/$LIGHT_SRC" "$target_dir/yt_logo_text_light.png"
-              cp "$BASE_DIR/$DARK_SRC" "$target_dir/yt_wordmark_header_dark.png"
-              cp "$BASE_DIR/$LIGHT_SRC" "$target_dir/yt_wordmark_header_light.png"
-              cp "$BASE_DIR/$DARK_SRC" "$target_dir/yt_ringo2_wordmark_header_dark.webp"
-              cp "$BASE_DIR/$LIGHT_SRC" "$target_dir/yt_ringo2_wordmark_header_light.webp"
-              cp "$BASE_DIR/$DARK_SRC" "$target_dir/youtube_logo.webp"
-              cp "$BASE_DIR/$DARK_SRC" "$target_dir/ic_youtube_logo.png"
-            done
-          }
+          echo "========================================================="
+          echo "🔄 AUTO-SWAPPING ALL REGULAR LOGOS IN JADX RESOURCES"
+          echo "========================================================="
           
-          prepare_logos "zip_injection/res"
-          prepare_logos "zip_injection/resources/res"
+          # ਹੁਣ ਜਿੱਥੇ ਵੀ ਆਮ ਲੋਗੋ ਪਏ ਨੇ, ਉਹਨਾਂ ਨੂੰ ਆਪੇ ਲੱਭ ਕੇ ਬਦਲਣਾ
+          find jadx_out -type f \( -name "*wordmark*header*" -o -name "*logo_text*" -o -name "*youtube_logo*" \) | grep -v "premium" | while read -r normal_logo; do
+            if [[ "$normal_logo" == *"dark"* ]]; then
+              rm -f "$normal_logo" && cp premium_dark_auto.png "$normal_logo"
+              echo "  ✅ REPLACED (DARK): $normal_logo"
+            elif [[ "$normal_logo" == *"light"* ]]; then
+              rm -f "$normal_logo" && cp premium_light_auto.png "$normal_logo"
+              echo "  ✅ REPLACED (LIGHT): $normal_logo"
+            else
+              rm -f "$normal_logo" && cp premium_dark_auto.png "$normal_logo"
+              echo "  ✅ REPLACED (GENERAL): $normal_logo"
+            fi
+          done
+
+      - name: Inject Modified Logos Directly Back into Original APK
+        run: |
+          BASE_DIR=$(pwd)
+          echo "========================================================="
+          echo "📦 INJECTING MODIFIED LOGOS VIA ZIP INTO ORIGINAL APK"
+          echo "========================================================="
           
-          # ਏ.ਪੀ.ਕੇ ਦੇ ਅੰਦਰ ਇੰਜੈਕਟ ਕਰਨਾ
-          cd zip_injection
-          zip -ur "$BASE_DIR/youtube_unsigned.apk" res/ resources/
+          # ਇੱਕ ਸਾਫ਼ ਫੋਲਡਰ ਬਣਾ ਕੇ ਸਿਰਫ਼ ਬਦਲੀਆਂ ਹੋਈਆਂ ਫੋਟੋਆਂ ਦਾ ਸਟ੍ਰਕਚਰ ਤਿਆਰ ਕਰਨਾ
+          mkdir -p zip_repack
+          
+          # JADX ਦੇ ਰਿਸੋਰਸ ਫੋਲਡਰ (res) ਨੂੰ ਚੁੱਕਣਾ
+          if [ -d "jadx_out/resources/res" ]; then
+            cp -r jadx_out/resources/res zip_repack/
+          elif [ -d "jadx_out/res" ]; then
+            cp -r jadx_out/res zip_repack/
+          fi
+          
+          # ਸਿਰਫ਼ drawable ਫੋਲਡਰ ਰੱਖਣੇ, ਬਾਕੀ ਫਾਲਤੂ XML/Layouts ਡਿਲੀਟ ਕਰ ਦੇਣੇ ਤਾਂ ਜੋ ਏ.ਪੀ.ਕੇ ਖਰਾਬ ਨਾ ਹੋਵੇ
+          find zip_repack -type f ! \( -name "*wordmark*header*" -o -name "*logo_text*" -o -name "*youtube_logo*" \) -delete 2>/dev/null || true
+          
+          # ਮੇਨ ਏ.ਪੀ.ਕੇ ਦੀ ਇੱਕ ਕਾਪੀ ਬਣਾਉਣੀ ਜਿਸਨੂੰ ਆਪਾਂ ਅਪਡੇਟ ਕਰਨਾ ਹੈ
+          cp youtube_orig.apk youtube_modified.apk
+          
+          # ਜ਼ਿਪ ਕਮਾਂਡ ਰਾਹੀਂ ਅਸਲੀ ਏ.ਪੀ.ਕੇ ਦੇ ਅੰਦਰ ਫੋਟੋਆਂ ਅਪਡੇਟ ਕਰ ਦੇਣੀਆਂ
+          cd zip_repack
+          # ਜੇਕਰ ਰਿਸੋਰਸਿਜ਼ 'resources/res' ਪਾਥ ਵਿੱਚ ਸਨ
+          if [ -d "resources" ]; then
+            zip -ur "$BASE_DIR/youtube_modified.apk" resources/
+          else
+            # ਜੇਕਰ ਸਿੱਧੇ 'res' ਵਿੱਚ ਸਨ
+            zip -ur "$BASE_DIR/youtube_modified.apk" res/
+          fi
           cd "$BASE_DIR"
           
-          rm -rf zip_injection
-          echo "✅ INJECTION INTO ZIP/APK COMPLETED!"
-          echo "========================================================="
+          rm -rf zip_repack jadx_out premium_dark_auto.png premium_light_auto.png
+          echo "✅ MODIFIED APK ZIP REPACKING COMPLETED!"
 
       - name: Setup Android SDK Tools
         uses: android-actions/setup-android@v3
 
-      - name: Generate Keystore & Sign Final APK
+      - name: Zipalign & Sign Final JADX-Modded APK
         run: |
           keytool -genkey -v -keystore release.keystore -alias youtube_alias -keyalg RSA -keysize 2048 -validity 10000 -storepass "mysecretpassword" -keypass "mysecretpassword" -dname "CN=Diljan, OU=Dev, O=Mod, L=IN, S=PB, C=IN"
-          $ANDROID_HOME/build-tools/34.0.0/zipalign -v 4 youtube_unsigned.apk youtube_aligned.apk
+          $ANDROID_HOME/build-tools/34.0.0/zipalign -v 4 youtube_modified.apk youtube_aligned.apk
           $ANDROID_HOME/build-tools/34.0.0/apksigner sign --ks release.keystore --ks-pass pass:"mysecretpassword" --out youtube_premium_mod.apk youtube_aligned.apk
 
       - name: Upload Final Signed APK File
