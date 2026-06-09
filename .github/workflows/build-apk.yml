@@ -13,7 +13,6 @@ jobs:
 
       - name: Reassemble Split APK Parts
         run: |
-          # 20-20MB ਦੇ ਛੋਟੇ ਟੁਕੜਿਆਂ ਨੂੰ ਜੋੜ ਕੇ ਵਾਪਿਸ 180MB ਦੀ ਅਸਲੀ APK ਤਿਆਰ ਕਰਨਾ
           cat apk_part_* > youtube_orig.apk
           rm -f apk_part_*
 
@@ -27,37 +26,38 @@ jobs:
         run: |
           mkdir -p ~/.local/bin
           wget https://raw.githubusercontent.com/iBotPeaches/Apktool/master/scripts/linux/apktool -O ~/.local/bin/apktool
-          # ਬਿਲਕੁਲ ਲੇਟੈਸਟ v2.10.0 ਵਰਜਨ ਤਾਂ ਕਿ XML ਵ੍ਹਾਈਟਸਪੇਸ ਵਾਲਾ ਐਰਰ ਨਾ ਆਵੇ
           wget https://github.com/iBotPeaches/Apktool/releases/download/v2.10.0/apktool_2.10.0.jar -O ~/.local/bin/apktool.jar
           chmod +x ~/.local/bin/apktool ~/.local/bin/apktool.jar
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Decompile Repository YouTube APK
+      - name: Decompile YouTube APK (Bypassing XML Errors)
         run: |
-          apktool d youtube_orig.apk -o youtube_out
+          # -r flag poun naal resources decode nahi honge, te error kade vi nahi aavega!
+          apktool d -r youtube_orig.apk -o youtube_out
 
       - name: Auto Swap Logos For Premium Header
         run: |
-          cd youtube_out/res/
+          # Kyunki -r naal decode kita hai, saare assets 'res' di thaan direct 'unknown/res' vich milde han
+          cd youtube_out/unknown/res/ || cd youtube_out/res/
           
           if [ -d "drawable-xxhdpi" ]; then
             cd drawable-xxhdpi
-            rm -f yt_logo_text_dark.png && cp yt_premium_logo_text_dark.png yt_logo_text_dark.png
-            rm -f yt_logo_text_light.png && cp yt_premium_logo_text_light.png yt_logo_text_light.png
+            rm -f yt_logo_text_dark.png && cp ../../../yt_premium_logo_text_dark.png yt_logo_text_dark.png
+            rm -f yt_logo_text_light.png && cp ../../../yt_premium_logo_text_light.png yt_logo_text_light.png
             cd ..
           fi
           
           if [ -d "drawable-xxxhdpi" ]; then
             cd drawable-xxxhdpi
-            rm -f yt_logo_text_dark.png && cp yt_premium_logo_text_dark.png yt_logo_text_dark.png
-            rm -f yt_logo_text_light.png && cp yt_premium_logo_text_light.png yt_logo_text_light.png
+            rm -f yt_logo_text_dark.png && cp ../../../yt_premium_logo_text_dark.png yt_logo_text_dark.png
+            rm -f yt_logo_text_light.png && cp ../../../yt_premium_logo_text_light.png yt_logo_text_light.png
             cd ..
           fi
 
           if [ -d "drawable-xhdpi" ]; then
             cd drawable-xhdpi
-            rm -f yt_logo_text_dark.png && cp yt_premium_logo_text_dark.png yt_logo_text_dark.png
-            rm -f yt_logo_text_light.png && cp yt_premium_logo_text_light.png yt_logo_text_light.png
+            rm -f yt_logo_text_dark.png && cp ../../../yt_premium_logo_text_dark.png yt_logo_text_dark.png
+            rm -f yt_logo_text_light.png && cp ../../../yt_premium_logo_text_light.png yt_logo_text_light.png
             cd ..
           fi
 
