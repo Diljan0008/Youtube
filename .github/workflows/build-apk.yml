@@ -36,29 +36,31 @@ jobs:
 
       - name: Auto Swap Logos For Premium Header
         run: |
-          # Direct res folder de andar jao
-          cd youtube_out/res/
+          # ਲਿਸਟ ਮੁਤਾਬਕ ਬਿਲਕੁਲ ਸਹੀ ਰਸਤਾ (Path)
+          cd youtube_out/resources/res/
           
-          if [ -d "drawable-xxhdpi" ]; then
-            cd drawable-xxhdpi
-            rm -f yt_logo_text_dark.png && cp ../../../yt_premium_logo_text_dark.png yt_logo_text_dark.png
-            rm -f yt_logo_text_light.png && cp ../../../yt_premium_logo_text_light.png yt_logo_text_light.png
-            cd ..
-          fi
-          
-          if [ -d "drawable-xxxhdpi" ]; then
-            cd drawable-xxxhdpi
-            rm -f yt_logo_text_dark.png && cp ../../../yt_premium_logo_text_dark.png yt_logo_text_dark.png
-            rm -f yt_logo_text_light.png && cp ../../../yt_premium_logo_text_light.png yt_logo_text_light.png
-            cd ..
-          fi
+          swap_logos() {
+            local folder=$1
+            if [ -d "$folder" ]; then
+              cd "$folder"
+              
+              # 1. ਡਾਰਕ ਅਤੇ ਲਾਈਟ ਥੀਮ ਦੇ ਲੋਗੋ ਨੂੰ ਪ੍ਰੀਮੀਅਮ ਲੋਗੋ ਨਾਲ ਬਦਲਣਾ
+              rm -f yt_logo_text_dark.png && cp ../../../../yt_premium_logo_text_dark.png yt_logo_text_dark.png
+              rm -f yt_logo_text_light.png && cp ../../../../yt_premium_logo_text_light.png yt_logo_text_light.png
+              
+              # 2. ਨਵੇਂ .webp ਵਾਲੇ ਲੋਗੋ ਨੂੰ ਵੀ ਪ੍ਰੀਮੀਅਮ ਲੋਗੋ ਨਾਲ ਬਦਲਣਾ (ਬੈਕਅੱਪ ਲਈ)
+              rm -f youtube_logo.webp && cp ../../../../yt_premium_logo_text_dark.png youtube_logo.webp
+              
+              cd ..
+            fi
+          }
 
-          if [ -d "drawable-xhdpi" ]; then
-            cd drawable-xhdpi
-            rm -f yt_logo_text_dark.png && cp ../../../yt_premium_logo_text_dark.png yt_logo_text_dark.png
-            rm -f yt_logo_text_light.png && cp ../../../yt_premium_logo_text_light.png yt_logo_text_light.png
-            cd ..
-          fi
+          # ਤੁਹਾਡੀ ਲਿਸਟ ਦੇ ਸਾਰੇ ਫੋਲਡਰਾਂ ਵਿੱਚ ਇਹ ਰਿਪਲੇਸਮੈਂਟ ਚਲਾਉਣੀ
+          swap_logos "drawable-xxxhdpi"
+          swap_logos "drawable-xxhdpi"
+          swap_logos "drawable-xhdpi"
+          swap_logos "drawable-hdpi"
+          swap_logos "drawable-mdpi"
 
       - name: Recompile Modified Code Into APK
         run: |
