@@ -37,7 +37,6 @@ jobs:
 
       - name: Recompile Code Into APK (First Build)
         run: |
-          # ਪਹਿਲਾਂ ਨੋਰਮਲ ਏ.ਪੀ.ਕੇ ਬਣਾ ਲਓ
           apktool b youtube_out -o youtube_unsigned.apk
 
       - name: Direct Zip Injection (Replacing Logos inside Compiled APK)
@@ -48,7 +47,28 @@ jobs:
           echo "🚀 INJECTING PREMIUM LOGOS DIRECTLY INTO COMPILED APK"
           echo "========================================================="
           
-          # ਇੱਕ ਟੈਂਪਰੇਰੀ ਫੋਲਡਰ ਬਣਾ ਕੇ ਲੋਗੋ ਦਾ ਸਹੀ ਸਟ੍ਰਕਚਰ ਤਿਆਰ ਕਰਨਾ
+          # ਪਹਿਲਾਂ ਚੈੱਕ ਕਰਨਾ ਕਿ ਤੁਹਾਡੀ ਰੈਪੋ 'ਚ ਅਸਲੀ ਫਾਈਲਾਂ ਕਿਹੜੀਆਂ ਪਈਆਂ ਨੇ
+          echo "📁 Checking files in repository root:"
+          ls -la
+          
+          # ਜੇ ਫਾਈਲਾਂ ਦਾ ਨਾਮ ਥੋੜ੍ਹਾ ਬਦਲਵਾਂ ਹੈ ਤਾਂ ਆਪੇ ਸਹੀ ਫਾਈਲ ਸੈੱਟ ਕਰਨਾ
+          DARK_SRC=$(find . -maxdepth 1 -name "*premium*dark*.png" -o -name "*premium*dark*.webp" | head -n 1)
+          LIGHT_SRC=$(find . -maxdepth 1 -name "*premium*light*.png" -o -name "*premium*light*.webp" | head -n 1)
+          
+          # ਜੇਕਰ ਉੱਪਰਲੇ ਨਾਮ ਨਾ ਮਿਲੇ ਤਾਂ ਕੋਈ ਵੀ premium ਨਾਮ ਵਾਲੀ ਫਾਈਲ ਚੁੱਕ ਲੈਣਾ
+          if [ -z "$DARK_SRC" ]; then DARK_SRC=$(find . -maxdepth 1 -name "*premium*.png" | head -n 1); fi
+          if [ -z "$LIGHT_SRC" ]; then LIGHT_SRC=$(find . -maxdepth 1 -name "*premium*.png" | tail -n 1); fi
+          
+          # ਜੇ ਫਿਰ ਵੀ ਕੁਝ ਨਾ ਮਿਲੇ (ਯਾਨੀ ਫਾਈਲ ਅਪਲੋਡ ਹੀ ਨਹੀਂ ਕੀਤੀ)
+          if [ -z "$DARK_SRC" ] || [ ! -f "$DARK_SRC" ]; then
+            echo "❌ ERROR: ਰੈਪੋ ਵਿੱਚ ਕੋਈ ਵੀ ਪ੍ਰੀਮੀਅਮ ਲੋਗੋ (premium_logo) ਇਮੇਜ ਨਹੀਂ ਮਿਲੀ! ਕਿਰਪਾ ਕਰਕੇ ਪਹਿਲਾਂ ਫਾਈਲ ਅਪਲੋਡ ਕਰੋ।"
+            exit 1
+          fi
+          
+          echo "🎯 Using Dark Logo Source: $DARK_SRC"
+          echo "🎯 Using Light Logo Source: $LIGHT_SRC"
+          
+          # ਟੈਂਪਰੇਰੀ ਫੋਲਡਰ ਸਟ੍ਰਕਚਰ ਤਿਆਰ ਕਰਨਾ
           mkdir -p zip_injection/res
           mkdir -p zip_injection/resources/res
           
@@ -58,22 +78,21 @@ jobs:
               local target_dir="$root_path/drawable-$size"
               mkdir -p "$target_dir"
               
-              cp "$BASE_DIR/yt_premium_logo_text_dark.png" "$target_dir/yt_logo_text_dark.png"
-              cp "$BASE_DIR/yt_premium_logo_text_light.png" "$target_dir/yt_logo_text_light.png"
-              cp "$BASE_DIR/yt_premium_logo_text_dark.png" "$target_dir/yt_wordmark_header_dark.png"
-              cp "$BASE_DIR/yt_premium_logo_text_light.png" "$target_dir/yt_wordmark_header_light.png"
-              cp "$BASE_DIR/yt_premium_logo_text_dark.png" "$target_dir/yt_ringo2_wordmark_header_dark.webp"
-              cp "$BASE_DIR/yt_premium_logo_text_light.png" "$target_dir/yt_ringo2_wordmark_header_light.webp"
-              cp "$BASE_DIR/yt_premium_logo_text_dark.png" "$target_dir/youtube_logo.webp"
-              cp "$BASE_DIR/yt_premium_logo_text_dark.png" "$target_dir/ic_youtube_logo.png"
+              cp "$BASE_DIR/$DARK_SRC" "$target_dir/yt_logo_text_dark.png"
+              cp "$BASE_DIR/$LIGHT_SRC" "$target_dir/yt_logo_text_light.png"
+              cp "$BASE_DIR/$DARK_SRC" "$target_dir/yt_wordmark_header_dark.png"
+              cp "$BASE_DIR/$LIGHT_SRC" "$target_dir/yt_wordmark_header_light.png"
+              cp "$BASE_DIR/$DARK_SRC" "$target_dir/yt_ringo2_wordmark_header_dark.webp"
+              cp "$BASE_DIR/$LIGHT_SRC" "$target_dir/yt_ringo2_wordmark_header_light.webp"
+              cp "$BASE_DIR/$DARK_SRC" "$target_dir/youtube_logo.webp"
+              cp "$BASE_DIR/$DARK_SRC" "$target_dir/ic_youtube_logo.png"
             done
           }
           
-          # ਦੋਵਾਂ ਪਾਥਾਂ ਲਈ ਫਾਈਲਾਂ ਰੈਡੀ ਕਰਨੀਆਂ
           prepare_logos "zip_injection/res"
           prepare_logos "zip_injection/resources/res"
           
-          # ਹੁਣ ਇਹਨਾਂ ਫਾਈਲਾਂ ਨੂੰ ਸਿੱਧਾ ਬਣੀ ਹੋਈ youtube_unsigned.apk ਦੇ ਅੰਦਰ ਇੰਜੈਕਟ (Update) ਕਰਨਾ
+          # ਏ.ਪੀ.ਕੇ ਦੇ ਅੰਦਰ ਇੰਜੈਕਟ ਕਰਨਾ
           cd zip_injection
           zip -ur "$BASE_DIR/youtube_unsigned.apk" res/ resources/
           cd "$BASE_DIR"
