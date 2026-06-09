@@ -34,62 +34,49 @@ jobs:
         run: |
           apktool d -r youtube_orig.apk -o youtube_out
 
-      - name: Auto Swap EVERY SINGLE LOGO For Premium Header
+      - name: Auto Search and Swap All Logos
         run: |
           BASE_DIR=$(pwd)
           
           echo "========================================================="
-          echo "🚀 STARTING LOGO SWAPPING PROCESS WITH LIVE LOGS"
+          echo "🔍 STARTING AUTOMATIC SEARCH AND REPLACE"
           echo "========================================================="
           
-          find youtube_out -type d -name "drawable-*" | while read -r dir; do
-            # ਸਿਰਫ ਓਹੀ ਫੋਲਡਰ ਸਕ੍ਰੀਨ ਤੇ ਦਿਖਾਉਣੇ ਜਿੱਥੇ ਕੰਮ ਹੋ ਰਿਹਾ ਹੈ
-            MATCH_FOUND=false
+          # ਫੰਕਸ਼ਨ ਜੋ ਪੂਰੀ ਐਪ ਵਿੱਚੋਂ ਫਾਈਲ ਦਾ ਨਾਮ ਆਪੇ ਲੱਭ ਕੇ ਉਸਨੂੰ ਬਦਲੇਗਾ
+          auto_find_and_replace() {
+            local target_file=$1
+            local source_premium=$2
             
-            # 1. ਪੁਰਾਣੇ ਟੈਕਸਟ ਵਾਲੇ ਲੋਗੋ ਬਦਲੋ
-            if [ -f "$dir/yt_logo_text_dark.png" ]; then
-              rm -f "$dir/yt_logo_text_dark.png" && cp "$BASE_DIR/yt_premium_logo_text_dark.png" "$dir/yt_logo_text_dark.png"
-              echo "✅ CHANGED: [yt_logo_text_dark.png] in path: $dir"
-            fi
-            if [ -f "$dir/yt_logo_text_light.png" ]; then
-              rm -f "$dir/yt_logo_text_light.png" && cp "$BASE_DIR/yt_premium_logo_text_light.png" "$dir/yt_logo_text_light.png"
-              echo "✅ CHANGED: [yt_logo_text_light.png] in path: $dir"
-            fi
+            echo "🔎 Searching for: $target_file ..."
             
-            # 2. ਨਵੇਂ PNG Wordmark Headers ਨੂੰ ਬਦਲੋ
-            if [ -f "$dir/yt_wordmark_header_dark.png" ]; then
-              rm -f "$dir/yt_wordmark_header_dark.png" && cp "$BASE_DIR/yt_premium_logo_text_dark.png" "$dir/yt_wordmark_header_dark.png"
-              echo "✅ CHANGED: [yt_wordmark_header_dark.png] in path: $dir"
-            fi
-            if [ -f "$dir/yt_wordmark_header_light.png" ]; then
-              rm -f "$dir/yt_wordmark_header_light.png" && cp "$BASE_DIR/yt_premium_logo_text_light.png" "$dir/yt_wordmark_header_light.png"
-              echo "✅ CHANGED: [yt_wordmark_header_light.png] in path: $dir"
-            fi
-            
-            # 3. ਨਵੇਂ WEBP Ringo2 Wordmark Headers ਨੂੰ ਬਦਲੋ
-            if [ -f "$dir/yt_ringo2_wordmark_header_dark.webp" ]; then
-              rm -f "$dir/yt_ringo2_wordmark_header_dark.webp" && cp "$BASE_DIR/yt_premium_logo_text_dark.png" "$dir/yt_ringo2_wordmark_header_dark.webp"
-              echo "✅ CHANGED: [yt_ringo2_wordmark_header_dark.webp] in path: $dir"
-            fi
-            if [ -f "$dir/yt_ringo2_wordmark_header_light.webp" ]; then
-              rm -f "$dir/yt_ringo2_wordmark_header_light.webp" && cp "$BASE_DIR/yt_premium_logo_text_light.png" "$dir/yt_ringo2_wordmark_header_light.webp"
-              echo "✅ CHANGED: [yt_ringo2_wordmark_header_light.webp] in path: $dir"
-            fi
-            
-            # 4. ਬਾਕੀ ਬਚੇ ਆਮ youtube_logo ਵਾਲੇ ਬੈਕਅੱਪ ਵੀ ਸਾਫ਼ ਕਰੋ
-            if [ -f "$dir/youtube_logo.webp" ]; then
-              rm -f "$dir/youtube_logo.webp" && cp "$BASE_DIR/yt_premium_logo_text_dark.png" "$dir/youtube_logo.webp"
-              echo "✅ CHANGED: [youtube_logo.webp] in path: $dir"
-            fi
-            if [ -f "$dir/ic_youtube_logo.png" ]; then
-              rm -f "$dir/ic_youtube_logo.png" && cp "$BASE_DIR/yt_premium_logo_text_dark.png" "$dir/ic_youtube_logo.png"
-              echo "✅ CHANGED: [ic_youtube_logo.png] in path: $dir"
-            fi
-            
-          done
+            # ਪੂਰੇ youtube_out ਫੋਲਡਰ ਵਿੱਚੋਂ ਇਸ ਫਾਈਲ ਨੂੰ ਲੱਭਣਾ
+            find youtube_out -type f -name "$target_file" | while read -r file_path; do
+              if [ -f "$file_path" ]; then
+                rm -f "$file_path"
+                cp "$BASE_DIR/$source_premium" "$file_path"
+                echo "  ✅ AUTO-REPLACED: $file_path"
+              fi
+            done
+          }
+          
+          # 1. ਪੁਰਾਣੇ ਟੈਕਸਟ ਵਾਲੇ ਲੋਗੋ ਆਪੇ ਲੱਭ ਕੇ ਬਦਲੋ
+          auto_find_and_replace "yt_logo_text_dark.png" "yt_premium_logo_text_dark.png"
+          auto_find_and_replace "yt_logo_text_light.png" "yt_premium_logo_text_light.png"
+          
+          # 2. ਨਵੇਂ PNG Wordmark Headers ਆਪੇ ਲੱਭ ਕੇ ਬਦਲੋ
+          auto_find_and_replace "yt_wordmark_header_dark.png" "yt_premium_logo_text_dark.png"
+          auto_find_and_replace "yt_wordmark_header_light.png" "yt_premium_logo_text_light.png"
+          
+          # 3. ਨਵੇਂ WEBP Ringo2 Wordmark Headers ਆਪੇ ਲੱਭ ਕੇ ਬਦਲੋ
+          auto_find_and_replace "yt_ringo2_wordmark_header_dark.webp" "yt_premium_logo_text_dark.png"
+          auto_find_and_replace "yt_ringo2_wordmark_header_light.webp" "yt_premium_logo_text_light.png"
+          
+          # 4. ਬਾਕੀ ਬਚੇ ਆਮ ਬੈਕਅੱਪ ਲੋਗੋ ਵੀ ਆਪੇ ਲੱਭ ਕੇ ਸਾਫ਼ ਕਰੋ
+          auto_find_and_replace "youtube_logo.webp" "yt_premium_logo_text_dark.png"
+          auto_find_and_replace "ic_youtube_logo.png" "yt_premium_logo_text_dark.png"
           
           echo "========================================================="
-          echo "🎉 LOGO SWAPPING FINISHED SUCCESSFULLY!"
+          echo "🎉 AUTOMATIC SEARCH & SWAP FINISHED!"
           echo "========================================================="
 
       - name: Recompile Modified Code Into APK
