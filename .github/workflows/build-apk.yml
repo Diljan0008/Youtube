@@ -22,78 +22,65 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Install Latest Apktool & Tools
+      - name: Install Latest Apktool & ZIP Tools
         run: |
           mkdir -p ~/.local/bin
           wget https://raw.githubusercontent.com/iBotPeaches/Apktool/master/scripts/linux/apktool -O ~/.local/bin/apktool
           wget https://github.com/iBotPeaches/Apktool/releases/download/v2.10.0/apktool_2.10.0.jar -O ~/.local/bin/apktool.jar
           chmod +x ~/.local/bin/apktool ~/.local/bin/apktool.jar
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          sudo apt-get update && sudo apt-get install -y unzip zip
+          sudo apt-get update && sudo apt-get install -y zip
 
-      - name: Extract APK via Unzip & Decompile via Apktool
+      - name: Decompile YouTube APK
         run: |
-          # 1. ਪਹਿਲਾਂ ਐਰਰ ਤੋਂ ਬਚਣ ਲਈ -r ਨਾਲ ਨੋਰਮਲ ਡੀਕੰਪਾਈਲ ਕਰੋ
           apktool d -r youtube_orig.apk -o youtube_out
-          
-          # 2. ਫੋਟੋਆਂ ਕੱਢਣ ਲਈ ਏ.ਪੀ.ਕੇ ਨੂੰ ਸਿੱਧਾ ਅਨਜ਼ਿਪ ਕਰੋ (No XML Errors Possible!)
-          mkdir -p apk_extracted
-          unzip -q youtube_orig.apk -d apk_extracted
-          
-          # 3. ਅਨਜ਼ਿਪ ਕੀਤੀਆਂ ਅਸਲੀ ਫੋਟੋਆਂ ਨੂੰ youtube_out ਦੇ ਅੰਦਰ ਰਿਪਲੇਸ ਕਰਨ ਲਈ ਮੂਵ ਕਰੋ
-          if [ -d "apk_extracted/res" ]; then
-            cp -r apk_extracted/res/* youtube_out/res/
-          elif [ -d "apk_extracted/resources/res" ]; then
-            cp -r apk_extracted/resources/res/* youtube_out/resources/res/
-          fi
-          rm -rf apk_extracted
 
-      - name: Auto Search and Swap All Logos
+      - name: Recompile Code Into APK (First Build)
+        run: |
+          # ਪਹਿਲਾਂ ਨੋਰਮਲ ਏ.ਪੀ.ਕੇ ਬਣਾ ਲਓ
+          apktool b youtube_out -o youtube_unsigned.apk
+
+      - name: Direct Zip Injection (Replacing Logos inside Compiled APK)
         run: |
           BASE_DIR=$(pwd)
           
           echo "========================================================="
-          echo "🔍 STARTING AUTOMATIC SEARCH AND REPLACE"
+          echo "🚀 INJECTING PREMIUM LOGOS DIRECTLY INTO COMPILED APK"
           echo "========================================================="
           
-          auto_find_and_replace() {
-            local target_file=$1
-            local source_premium=$2
-            
-            echo "🔎 Searching for: $target_file ..."
-            
-            find youtube_out -type f -name "$target_file" | while read -r file_path; do
-              if [ -f "$file_path" ]; then
-                rm -f "$file_path"
-                cp "$BASE_DIR/$source_premium" "$file_path"
-                echo "  ✅ AUTO-REPLACED: $file_path"
-              fi
+          # ਇੱਕ ਟੈਂਪਰੇਰੀ ਫੋਲਡਰ ਬਣਾ ਕੇ ਲੋਗੋ ਦਾ ਸਹੀ ਸਟ੍ਰਕਚਰ ਤਿਆਰ ਕਰਨਾ
+          mkdir -p zip_injection/res
+          mkdir -p zip_injection/resources/res
+          
+          prepare_logos() {
+            local root_path=$1
+            for size in "mdpi" "hdpi" "xhdpi" "xxhdpi" "xxxhdpi"; do
+              local target_dir="$root_path/drawable-$size"
+              mkdir -p "$target_dir"
+              
+              cp "$BASE_DIR/yt_premium_logo_text_dark.png" "$target_dir/yt_logo_text_dark.png"
+              cp "$BASE_DIR/yt_premium_logo_text_light.png" "$target_dir/yt_logo_text_light.png"
+              cp "$BASE_DIR/yt_premium_logo_text_dark.png" "$target_dir/yt_wordmark_header_dark.png"
+              cp "$BASE_DIR/yt_premium_logo_text_light.png" "$target_dir/yt_wordmark_header_light.png"
+              cp "$BASE_DIR/yt_premium_logo_text_dark.png" "$target_dir/yt_ringo2_wordmark_header_dark.webp"
+              cp "$BASE_DIR/yt_premium_logo_text_light.png" "$target_dir/yt_ringo2_wordmark_header_light.webp"
+              cp "$BASE_DIR/yt_premium_logo_text_dark.png" "$target_dir/youtube_logo.webp"
+              cp "$BASE_DIR/yt_premium_logo_text_dark.png" "$target_dir/ic_youtube_logo.png"
             done
           }
           
-          # 1. ਪੁਰਾਣੇ ਟੈਕਸਟ ਵਾਲੇ ਲੋਗੋ
-          auto_find_and_replace "yt_logo_text_dark.png" "yt_premium_logo_text_dark.png"
-          auto_find_and_replace "yt_logo_text_light.png" "yt_premium_logo_text_light.png"
+          # ਦੋਵਾਂ ਪਾਥਾਂ ਲਈ ਫਾਈਲਾਂ ਰੈਡੀ ਕਰਨੀਆਂ
+          prepare_logos "zip_injection/res"
+          prepare_logos "zip_injection/resources/res"
           
-          # 2. ਨਵੇਂ PNG Wordmark Headers
-          auto_find_and_replace "yt_wordmark_header_dark.png" "yt_premium_logo_text_dark.png"
-          auto_find_and_replace "yt_wordmark_header_light.png" "yt_premium_logo_text_light.png"
+          # ਹੁਣ ਇਹਨਾਂ ਫਾਈਲਾਂ ਨੂੰ ਸਿੱਧਾ ਬਣੀ ਹੋਈ youtube_unsigned.apk ਦੇ ਅੰਦਰ ਇੰਜੈਕਟ (Update) ਕਰਨਾ
+          cd zip_injection
+          zip -ur "$BASE_DIR/youtube_unsigned.apk" res/ resources/
+          cd "$BASE_DIR"
           
-          # 3. ਨਵੇਂ WEBP Ringo2 Wordmark Headers
-          auto_find_and_replace "yt_ringo2_wordmark_header_dark.webp" "yt_premium_logo_text_dark.png"
-          auto_find_and_replace "yt_ringo2_wordmark_header_light.webp" "yt_premium_logo_text_light.png"
-          
-          # 4. ਬਾਕੀ ਬਚੇ ਆਮ ਬੈਕਅੱਪ ਲੋਗੋ
-          auto_find_and_replace "youtube_logo.webp" "yt_premium_logo_text_dark.png"
-          auto_find_and_replace "ic_youtube_logo.png" "yt_premium_logo_text_dark.png"
-          
+          rm -rf zip_injection
+          echo "✅ INJECTION INTO ZIP/APK COMPLETED!"
           echo "========================================================="
-          echo "🎉 AUTOMATIC SEARCH & SWAP FINISHED!"
-          echo "========================================================="
-
-      - name: Recompile Modified Code Into APK
-        run: |
-          apktool b youtube_out -o youtube_unsigned.apk
 
       - name: Setup Android SDK Tools
         uses: android-actions/setup-android@v3
