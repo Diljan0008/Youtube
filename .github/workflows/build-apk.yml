@@ -22,18 +22,31 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Install Latest Apktool
+      - name: Install Latest Apktool & Tools
         run: |
           mkdir -p ~/.local/bin
           wget https://raw.githubusercontent.com/iBotPeaches/Apktool/master/scripts/linux/apktool -O ~/.local/bin/apktool
           wget https://github.com/iBotPeaches/Apktool/releases/download/v2.10.0/apktool_2.10.0.jar -O ~/.local/bin/apktool.jar
           chmod +x ~/.local/bin/apktool ~/.local/bin/apktool.jar
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          sudo apt-get update && sudo apt-get install -y unzip zip
 
-      - name: Decompile YouTube APK (Full Resource Extraction)
+      - name: Extract APK via Unzip & Decompile via Apktool
         run: |
-          # ਇੱਥੋਂ -r ਹਟਾ ਦਿੱਤਾ ਹੈ ਤਾਂ ਜੋ ਸਾਰੀਆਂ ਫੋਟੋਆਂ ਬਾਹਰ ਆ ਜਾਣ
-          apktool d youtube_orig.apk -o youtube_out
+          # 1. ਪਹਿਲਾਂ ਐਰਰ ਤੋਂ ਬਚਣ ਲਈ -r ਨਾਲ ਨੋਰਮਲ ਡੀਕੰਪਾਈਲ ਕਰੋ
+          apktool d -r youtube_orig.apk -o youtube_out
+          
+          # 2. ਫੋਟੋਆਂ ਕੱਢਣ ਲਈ ਏ.ਪੀ.ਕੇ ਨੂੰ ਸਿੱਧਾ ਅਨਜ਼ਿਪ ਕਰੋ (No XML Errors Possible!)
+          mkdir -p apk_extracted
+          unzip -q youtube_orig.apk -d apk_extracted
+          
+          # 3. ਅਨਜ਼ਿਪ ਕੀਤੀਆਂ ਅਸਲੀ ਫੋਟੋਆਂ ਨੂੰ youtube_out ਦੇ ਅੰਦਰ ਰਿਪਲੇਸ ਕਰਨ ਲਈ ਮੂਵ ਕਰੋ
+          if [ -d "apk_extracted/res" ]; then
+            cp -r apk_extracted/res/* youtube_out/res/
+          elif [ -d "apk_extracted/resources/res" ]; then
+            cp -r apk_extracted/resources/res/* youtube_out/resources/res/
+          fi
+          rm -rf apk_extracted
 
       - name: Auto Search and Swap All Logos
         run: |
@@ -80,7 +93,6 @@ jobs:
 
       - name: Recompile Modified Code Into APK
         run: |
-          # ਬਿਲਡ ਕਰਨ ਵੇਲੇ ਰਿਸੋਰਸਿਜ਼ ਨੂੰ ਸਹੀ ਤਰ੍ਹਾਂ ਪੈਕ ਕਰਨਾ
           apktool b youtube_out -o youtube_unsigned.apk
 
       - name: Setup Android SDK Tools
