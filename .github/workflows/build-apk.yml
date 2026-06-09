@@ -34,28 +34,63 @@ jobs:
         run: |
           apktool d -r youtube_orig.apk -o youtube_out
 
-      - name: Auto Swap Logos For Premium Header
+      - name: Auto Swap EVERY SINGLE LOGO For Premium Header
         run: |
-          # ਪੂਰੇ youtube_out ਫੋਲਡਰ ਦੇ ਅੰਦਰੋਂ 'drawable-' ਵਾਲੇ ਫੋਲਡਰ ਆਪੇ ਲੱਭਣ ਲਈ ਲੂਪ
           BASE_DIR=$(pwd)
           
+          echo "========================================================="
+          echo "🚀 STARTING LOGO SWAPPING PROCESS WITH LIVE LOGS"
+          echo "========================================================="
+          
           find youtube_out -type d -name "drawable-*" | while read -r dir; do
-            echo "Modifying logos in: $dir"
-            cd "$BASE_DIR/$dir"
+            # ਸਿਰਫ ਓਹੀ ਫੋਲਡਰ ਸਕ੍ਰੀਨ ਤੇ ਦਿਖਾਉਣੇ ਜਿੱਥੇ ਕੰਮ ਹੋ ਰਿਹਾ ਹੈ
+            MATCH_FOUND=false
             
-            # 1. ਪੁਰਾਣੇ ਡਾਰਕ ਅਤੇ ਲਾਈਟ ਲੋਗੋ ਬਦਲਣਾ
-            if [ -f "yt_logo_text_dark.png" ]; then
-              rm -f yt_logo_text_dark.png && cp "$BASE_DIR/yt_premium_logo_text_dark.png" yt_logo_text_dark.png
+            # 1. ਪੁਰਾਣੇ ਟੈਕਸਟ ਵਾਲੇ ਲੋਗੋ ਬਦਲੋ
+            if [ -f "$dir/yt_logo_text_dark.png" ]; then
+              rm -f "$dir/yt_logo_text_dark.png" && cp "$BASE_DIR/yt_premium_logo_text_dark.png" "$dir/yt_logo_text_dark.png"
+              echo "✅ CHANGED: [yt_logo_text_dark.png] in path: $dir"
             fi
-            if [ -f "yt_logo_text_light.png" ]; then
-              rm -f yt_logo_text_light.png && cp "$BASE_DIR/yt_premium_logo_text_light.png" yt_logo_text_light.png
+            if [ -f "$dir/yt_logo_text_light.png" ]; then
+              rm -f "$dir/yt_logo_text_light.png" && cp "$BASE_DIR/yt_premium_logo_text_light.png" "$dir/yt_logo_text_light.png"
+              echo "✅ CHANGED: [yt_logo_text_light.png] in path: $dir"
             fi
             
-            # 2. ਨਵੇਂ .webp ਵਾਲੇ ਬੈਕਅੱਪ ਲੋਗੋ ਨੂੰ ਵੀ ਪ੍ਰੀਮੀਅਮ ਲੋਗੋ ਨਾਲ ਬਦਲਣਾ
-            if [ -f "youtube_logo.webp" ]; then
-              rm -f youtube_logo.webp && cp "$BASE_DIR/yt_premium_logo_text_dark.png" youtube_logo.webp
+            # 2. ਨਵੇਂ PNG Wordmark Headers ਨੂੰ ਬਦਲੋ
+            if [ -f "$dir/yt_wordmark_header_dark.png" ]; then
+              rm -f "$dir/yt_wordmark_header_dark.png" && cp "$BASE_DIR/yt_premium_logo_text_dark.png" "$dir/yt_wordmark_header_dark.png"
+              echo "✅ CHANGED: [yt_wordmark_header_dark.png] in path: $dir"
             fi
+            if [ -f "$dir/yt_wordmark_header_light.png" ]; then
+              rm -f "$dir/yt_wordmark_header_light.png" && cp "$BASE_DIR/yt_premium_logo_text_light.png" "$dir/yt_wordmark_header_light.png"
+              echo "✅ CHANGED: [yt_wordmark_header_light.png] in path: $dir"
+            fi
+            
+            # 3. ਨਵੇਂ WEBP Ringo2 Wordmark Headers ਨੂੰ ਬਦਲੋ
+            if [ -f "$dir/yt_ringo2_wordmark_header_dark.webp" ]; then
+              rm -f "$dir/yt_ringo2_wordmark_header_dark.webp" && cp "$BASE_DIR/yt_premium_logo_text_dark.png" "$dir/yt_ringo2_wordmark_header_dark.webp"
+              echo "✅ CHANGED: [yt_ringo2_wordmark_header_dark.webp] in path: $dir"
+            fi
+            if [ -f "$dir/yt_ringo2_wordmark_header_light.webp" ]; then
+              rm -f "$dir/yt_ringo2_wordmark_header_light.webp" && cp "$BASE_DIR/yt_premium_logo_text_light.png" "$dir/yt_ringo2_wordmark_header_light.webp"
+              echo "✅ CHANGED: [yt_ringo2_wordmark_header_light.webp] in path: $dir"
+            fi
+            
+            # 4. ਬਾਕੀ ਬਚੇ ਆਮ youtube_logo ਵਾਲੇ ਬੈਕਅੱਪ ਵੀ ਸਾਫ਼ ਕਰੋ
+            if [ -f "$dir/youtube_logo.webp" ]; then
+              rm -f "$dir/youtube_logo.webp" && cp "$BASE_DIR/yt_premium_logo_text_dark.png" "$dir/youtube_logo.webp"
+              echo "✅ CHANGED: [youtube_logo.webp] in path: $dir"
+            fi
+            if [ -f "$dir/ic_youtube_logo.png" ]; then
+              rm -f "$dir/ic_youtube_logo.png" && cp "$BASE_DIR/yt_premium_logo_text_dark.png" "$dir/ic_youtube_logo.png"
+              echo "✅ CHANGED: [ic_youtube_logo.png] in path: $dir"
+            fi
+            
           done
+          
+          echo "========================================================="
+          echo "🎉 LOGO SWAPPING FINISHED SUCCESSFULLY!"
+          echo "========================================================="
 
       - name: Recompile Modified Code Into APK
         run: |
