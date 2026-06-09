@@ -32,13 +32,12 @@ jobs:
 
       - name: Decompile YouTube APK (Bypassing XML Errors)
         run: |
-          # -r flag poun naal resources decode nahi honge, te error kade vi nahi aavega!
           apktool d -r youtube_orig.apk -o youtube_out
 
       - name: Auto Swap Logos For Premium Header
         run: |
-          # Kyunki -r naal decode kita hai, saare assets 'res' di thaan direct 'unknown/res' vich milde han
-          cd youtube_out/unknown/res/ || cd youtube_out/res/
+          # Direct res folder de andar jao
+          cd youtube_out/res/
           
           if [ -d "drawable-xxhdpi" ]; then
             cd drawable-xxhdpi
