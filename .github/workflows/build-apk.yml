@@ -36,31 +36,26 @@ jobs:
 
       - name: Auto Swap Logos For Premium Header
         run: |
-          # ਲਿਸਟ ਮੁਤਾਬਕ ਬਿਲਕੁਲ ਸਹੀ ਰਸਤਾ (Path)
-          cd youtube_out/resources/res/
+          # ਪੂਰੇ youtube_out ਫੋਲਡਰ ਦੇ ਅੰਦਰੋਂ 'drawable-' ਵਾਲੇ ਫੋਲਡਰ ਆਪੇ ਲੱਭਣ ਲਈ ਲੂਪ
+          BASE_DIR=$(pwd)
           
-          swap_logos() {
-            local folder=$1
-            if [ -d "$folder" ]; then
-              cd "$folder"
-              
-              # 1. ਡਾਰਕ ਅਤੇ ਲਾਈਟ ਥੀਮ ਦੇ ਲੋਗੋ ਨੂੰ ਪ੍ਰੀਮੀਅਮ ਲੋਗੋ ਨਾਲ ਬਦਲਣਾ
-              rm -f yt_logo_text_dark.png && cp ../../../../yt_premium_logo_text_dark.png yt_logo_text_dark.png
-              rm -f yt_logo_text_light.png && cp ../../../../yt_premium_logo_text_light.png yt_logo_text_light.png
-              
-              # 2. ਨਵੇਂ .webp ਵਾਲੇ ਲੋਗੋ ਨੂੰ ਵੀ ਪ੍ਰੀਮੀਅਮ ਲੋਗੋ ਨਾਲ ਬਦਲਣਾ (ਬੈਕਅੱਪ ਲਈ)
-              rm -f youtube_logo.webp && cp ../../../../yt_premium_logo_text_dark.png youtube_logo.webp
-              
-              cd ..
+          find youtube_out -type d -name "drawable-*" | while read -r dir; do
+            echo "Modifying logos in: $dir"
+            cd "$BASE_DIR/$dir"
+            
+            # 1. ਪੁਰਾਣੇ ਡਾਰਕ ਅਤੇ ਲਾਈਟ ਲੋਗੋ ਬਦਲਣਾ
+            if [ -f "yt_logo_text_dark.png" ]; then
+              rm -f yt_logo_text_dark.png && cp "$BASE_DIR/yt_premium_logo_text_dark.png" yt_logo_text_dark.png
             fi
-          }
-
-          # ਤੁਹਾਡੀ ਲਿਸਟ ਦੇ ਸਾਰੇ ਫੋਲਡਰਾਂ ਵਿੱਚ ਇਹ ਰਿਪਲੇਸਮੈਂਟ ਚਲਾਉਣੀ
-          swap_logos "drawable-xxxhdpi"
-          swap_logos "drawable-xxhdpi"
-          swap_logos "drawable-xhdpi"
-          swap_logos "drawable-hdpi"
-          swap_logos "drawable-mdpi"
+            if [ -f "yt_logo_text_light.png" ]; then
+              rm -f yt_logo_text_light.png && cp "$BASE_DIR/yt_premium_logo_text_light.png" yt_logo_text_light.png
+            fi
+            
+            # 2. ਨਵੇਂ .webp ਵਾਲੇ ਬੈਕਅੱਪ ਲੋਗੋ ਨੂੰ ਵੀ ਪ੍ਰੀਮੀਅਮ ਲੋਗੋ ਨਾਲ ਬਦਲਣਾ
+            if [ -f "youtube_logo.webp" ]; then
+              rm -f youtube_logo.webp && cp "$BASE_DIR/yt_premium_logo_text_dark.png" youtube_logo.webp
+            fi
+          done
 
       - name: Recompile Modified Code Into APK
         run: |
