@@ -30,9 +30,10 @@ jobs:
           chmod +x ~/.local/bin/apktool ~/.local/bin/apktool.jar
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Decompile YouTube APK (Bypassing XML Errors)
+      - name: Decompile YouTube APK (Full Resource Extraction)
         run: |
-          apktool d -r youtube_orig.apk -o youtube_out
+          # ਇੱਥੋਂ -r ਹਟਾ ਦਿੱਤਾ ਹੈ ਤਾਂ ਜੋ ਸਾਰੀਆਂ ਫੋਟੋਆਂ ਬਾਹਰ ਆ ਜਾਣ
+          apktool d youtube_orig.apk -o youtube_out
 
       - name: Auto Search and Swap All Logos
         run: |
@@ -42,14 +43,12 @@ jobs:
           echo "🔍 STARTING AUTOMATIC SEARCH AND REPLACE"
           echo "========================================================="
           
-          # ਫੰਕਸ਼ਨ ਜੋ ਪੂਰੀ ਐਪ ਵਿੱਚੋਂ ਫਾਈਲ ਦਾ ਨਾਮ ਆਪੇ ਲੱਭ ਕੇ ਉਸਨੂੰ ਬਦਲੇਗਾ
           auto_find_and_replace() {
             local target_file=$1
             local source_premium=$2
             
             echo "🔎 Searching for: $target_file ..."
             
-            # ਪੂਰੇ youtube_out ਫੋਲਡਰ ਵਿੱਚੋਂ ਇਸ ਫਾਈਲ ਨੂੰ ਲੱਭਣਾ
             find youtube_out -type f -name "$target_file" | while read -r file_path; do
               if [ -f "$file_path" ]; then
                 rm -f "$file_path"
@@ -59,19 +58,19 @@ jobs:
             done
           }
           
-          # 1. ਪੁਰਾਣੇ ਟੈਕਸਟ ਵਾਲੇ ਲੋਗੋ ਆਪੇ ਲੱਭ ਕੇ ਬਦਲੋ
+          # 1. ਪੁਰਾਣੇ ਟੈਕਸਟ ਵਾਲੇ ਲੋਗੋ
           auto_find_and_replace "yt_logo_text_dark.png" "yt_premium_logo_text_dark.png"
           auto_find_and_replace "yt_logo_text_light.png" "yt_premium_logo_text_light.png"
           
-          # 2. ਨਵੇਂ PNG Wordmark Headers ਆਪੇ ਲੱਭ ਕੇ ਬਦਲੋ
+          # 2. ਨਵੇਂ PNG Wordmark Headers
           auto_find_and_replace "yt_wordmark_header_dark.png" "yt_premium_logo_text_dark.png"
           auto_find_and_replace "yt_wordmark_header_light.png" "yt_premium_logo_text_light.png"
           
-          # 3. ਨਵੇਂ WEBP Ringo2 Wordmark Headers ਆਪੇ ਲੱਭ ਕੇ ਬਦਲੋ
+          # 3. ਨਵੇਂ WEBP Ringo2 Wordmark Headers
           auto_find_and_replace "yt_ringo2_wordmark_header_dark.webp" "yt_premium_logo_text_dark.png"
           auto_find_and_replace "yt_ringo2_wordmark_header_light.webp" "yt_premium_logo_text_light.png"
           
-          # 4. ਬਾਕੀ ਬਚੇ ਆਮ ਬੈਕਅੱਪ ਲੋਗੋ ਵੀ ਆਪੇ ਲੱਭ ਕੇ ਸਾਫ਼ ਕਰੋ
+          # 4. ਬਾਕੀ ਬਚੇ ਆਮ ਬੈਕਅੱਪ ਲੋਗੋ
           auto_find_and_replace "youtube_logo.webp" "yt_premium_logo_text_dark.png"
           auto_find_and_replace "ic_youtube_logo.png" "yt_premium_logo_text_dark.png"
           
@@ -81,6 +80,7 @@ jobs:
 
       - name: Recompile Modified Code Into APK
         run: |
+          # ਬਿਲਡ ਕਰਨ ਵੇਲੇ ਰਿਸੋਰਸਿਜ਼ ਨੂੰ ਸਹੀ ਤਰ੍ਹਾਂ ਪੈਕ ਕਰਨਾ
           apktool b youtube_out -o youtube_unsigned.apk
 
       - name: Setup Android SDK Tools
