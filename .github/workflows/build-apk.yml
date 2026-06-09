@@ -1,4 +1,4 @@
-name: Automatic YouTube Premium Logo Builder (JADX Edition)
+name: Automatic YouTube Premium Logo Builder (JADX Full Edition)
 
 on:
   workflow_dispatch:
@@ -24,20 +24,19 @@ jobs:
 
       - name: Install JADX & ZIP Tools
         run: |
-          # JADX ਦਾ ਲੇਟੈਸਟ ਵਰਜ਼ਨ ਡਾਊਨਲੋਡ ਕਰਨਾ
           cd $HOME
           wget https://github.com/skylot/jadx/releases/download/v1.5.1/jadx-1.5.1.zip
           mkdir jadx_dir && unzip -q jadx-1.5.1.zip -d jadx_dir
           echo "$HOME/jadx_dir/bin" >> $GITHUB_PATH
           sudo apt-get update && sudo apt-get install -y zip unzip
 
-      - name: Decompile Resources using JADX
+      - name: Decompile Full APK using JADX
         run: |
           echo "========================================================="
-          echo "🚀 DECOMPILING RESOURCES WITH JADX (NO XML ERRORS)"
+          echo "🚀 DECOMPILING FULL APK WITH JADX"
           echo "========================================================="
-          # JADX ਰਾਹੀਂ ਸਿਰਫ਼ ਰਿਸੋਰਸਿਜ਼ ਅਤੇ ਇਮੇਜਿਜ਼ ਬਾਹਰ ਕੱਢਣੀਆਂ
-          jadx youtube_orig.apk --only-resources -d jadx_out
+          # ਇੱਥੋਂ --only-resources ਹਟਾ ਕੇ ਪੂਰੀ ਐਪ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ
+          jadx youtube_orig.apk -d jadx_out
 
       - name: Fully Automated Smart Logo Swap via JADX Output
         run: |
@@ -51,7 +50,7 @@ jobs:
           INT_PREMIUM_LIGHT=$(find jadx_out -type f -name "*premium*wordmark*light*" -o -name "*premium*logo*light*" | head -n 1)
           
           if [ -z "$INT_PREMIUM_DARK" ] || [ -z "$INT_PREMIUM_LIGHT" ]; then
-            echo "❌ ERROR: JADX ਨੂੰ ਵੀ ਐਪ ਦੇ ਅੰਦਰੋਂ ਪ੍ਰੀਮੀਅਮ ਲੋਗੋ ਨਹੀਂ ਲੱਭਿਆ!"
+            echo "❌ ERROR: JADX ਨੂੰ ਪੂਰੀ ਐਪ ਵਿੱਚੋਂ ਵੀ ਪ੍ਰੀਮੀਅਮ ਲੋਗੋ ਨਹੀਂ ਲੱਭਿਆ!"
             exit 1
           fi
           
@@ -87,7 +86,6 @@ jobs:
           echo "📦 INJECTING MODIFIED LOGOS VIA ZIP INTO ORIGINAL APK"
           echo "========================================================="
           
-          # ਇੱਕ ਸਾਫ਼ ਫੋਲਡਰ ਬਣਾ ਕੇ ਸਿਰਫ਼ ਬਦਲੀਆਂ ਹੋਈਆਂ ਫੋਟੋਆਂ ਦਾ ਸਟ੍ਰਕਚਰ ਤਿਆਰ ਕਰਨਾ
           mkdir -p zip_repack
           
           # JADX ਦੇ ਰਿਸੋਰਸ ਫੋਲਡਰ (res) ਨੂੰ ਚੁੱਕਣਾ
@@ -97,19 +95,15 @@ jobs:
             cp -r jadx_out/res zip_repack/
           fi
           
-          # ਸਿਰਫ਼ drawable ਫੋਲਡਰ ਰੱਖਣੇ, ਬਾਕੀ ਫਾਲਤੂ XML/Layouts ਡਿਲੀਟ ਕਰ ਦੇਣੇ ਤਾਂ ਜੋ ਏ.ਪੀ.ਕੇ ਖਰਾਬ ਨਾ ਹੋਵੇ
+          # ਸਿਰਫ਼ drawable ਫੋਲਡਰ ਰੱਖਣੇ, ਬਾਕੀ ਸਭ ਡਿਲੀਟ ਤਾਂ ਜੋ ਏ.ਪੀ.ਕੇ ਸਹੀ ਰਹੇ
           find zip_repack -type f ! \( -name "*wordmark*header*" -o -name "*logo_text*" -o -name "*youtube_logo*" \) -delete 2>/dev/null || true
           
-          # ਮੇਨ ਏ.ਪੀ.ਕੇ ਦੀ ਇੱਕ ਕਾਪੀ ਬਣਾਉਣੀ ਜਿਸਨੂੰ ਆਪਾਂ ਅਪਡੇਟ ਕਰਨਾ ਹੈ
           cp youtube_orig.apk youtube_modified.apk
           
-          # ਜ਼ਿਪ ਕਮਾਂਡ ਰਾਹੀਂ ਅਸਲੀ ਏ.ਪੀ.ਕੇ ਦੇ ਅੰਦਰ ਫੋਟੋਆਂ ਅਪਡੇਟ ਕਰ ਦੇਣੀਆਂ
           cd zip_repack
-          # ਜੇਕਰ ਰਿਸੋਰਸਿਜ਼ 'resources/res' ਪਾਥ ਵਿੱਚ ਸਨ
           if [ -d "resources" ]; then
             zip -ur "$BASE_DIR/youtube_modified.apk" resources/
           else
-            # ਜੇਕਰ ਸਿੱਧੇ 'res' ਵਿੱਚ ਸਨ
             zip -ur "$BASE_DIR/youtube_modified.apk" res/
           fi
           cd "$BASE_DIR"
