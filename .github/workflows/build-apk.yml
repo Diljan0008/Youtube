@@ -13,6 +13,7 @@ jobs:
 
       - name: Reassemble Split APK Parts
         run: |
+          # 20-20MB ਦੇ ਛੋਟੇ ਟੁਕੜਿਆਂ ਨੂੰ ਜੋੜ ਕੇ ਵਾਪਿਸ 180MB ਦੀ ਅਸਲੀ APK ਤਿਆਰ ਕਰਨਾ
           cat apk_part_* > youtube_orig.apk
           rm -f apk_part_*
 
@@ -26,15 +27,14 @@ jobs:
         run: |
           mkdir -p ~/.local/bin
           wget https://raw.githubusercontent.com/iBotPeaches/Apktool/master/scripts/linux/apktool -O ~/.local/bin/apktool
-          # Updated to latest v2.10.0 to fix the XML whitespace decoding error
+          # ਬਿਲਕੁਲ ਲੇਟੈਸਟ v2.10.0 ਵਰਜਨ ਤਾਂ ਕਿ XML ਵ੍ਹਾਈਟਸਪੇਸ ਵਾਲਾ ਐਰਰ ਨਾ ਆਵੇ
           wget https://github.com/iBotPeaches/Apktool/releases/download/v2.10.0/apktool_2.10.0.jar -O ~/.local/bin/apktool.jar
           chmod +x ~/.local/bin/apktool ~/.local/bin/apktool.jar
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Decompile Repository YouTube APK
         run: |
-          # Added --nofp flag to prevent framework parsing issues if any
-          apktool d --no-fp youtube_orig.apk -o youtube_out
+          apktool d youtube_orig.apk -o youtube_out
 
       - name: Auto Swap Logos For Premium Header
         run: |
